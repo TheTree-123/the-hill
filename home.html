@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><title>The Hill | Feed</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>body { background-color: #1a1512; color: #f9f4ef; }</style>
+</head>
+<body class="min-h-screen">
+    <nav class="border-b border-stone-800 p-4 sticky top-0 bg-[#1a1512] z-50">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold italic text-[#f3a661]">THE HILL</h1>
+            <div class="flex gap-4"><a href="home.html" class="text-[#f3a661]">Home</a><a href="profile.html" class="text-stone-400">Profile</a></div>
+        </div>
+    </nav>
+
+    <main class="max-w-4xl mx-auto mt-10 px-4 grid grid-cols-1 md:grid-cols-3 gap-8">
+        <aside class="md:col-span-1">
+            <div class="bg-stone-900 p-6 rounded-2xl border border-stone-800 text-center">
+                <img id="sideAvatar" src="" class="w-20 h-20 rounded-full mx-auto border-2 border-[#f3a661] mb-4">
+                <h2 id="sideName" class="font-bold text-lg text-[#f3a661]"></h2>
+                <div id="sideBadge" class="mt-2"></div>
+            </div>
+        </aside>
+
+        <section class="md:col-span-2 space-y-6">
+            <div class="bg-stone-900 p-4 rounded-2xl border border-stone-800">
+                <textarea id="postInput" class="w-full bg-stone-800 p-4 rounded-xl text-sm outline-none border border-stone-700 focus:border-[#f3a661] h-24" placeholder="What's happening?"></textarea>
+                <div class="flex justify-end mt-2">
+                    <button onclick="handlePostSubmit()" class="bg-[#f3a661] text-stone-900 font-bold px-6 py-2 rounded-lg text-sm hover:brightness-110">Post</button>
+                </div>
+            </div>
+
+            <div id="homeFeed" class="space-y-4">
+                <p class="text-stone-600 animate-pulse text-center">Fetching the latest tea...</p>
+            </div>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+    <script>
+        const user = JSON.parse(localStorage.getItem('currentUser'));
+        if (!user) window.location.href = "index.html";
+
+        document.getElementById('sideAvatar').src = user.avatar;
+        document.getElementById('sideName').innerText = user.user;
+        document.getElementById('sideBadge').innerHTML = getBadge(user.year);
+
+        async function handlePostSubmit() {
+            const btn = event.target;
+            const text = document.getElementById('postInput').value;
+            if(!text.trim()) return;
+            
+            btn.innerText = "Sending...";
+            btn.disabled = true;
+            
+            await publishPost(user.user, text);
+            document.getElementById('postInput').value = "";
+            btn.innerText = "Post";
+            btn.disabled = false;
+            
+            // Refresh feed after 1 second to give Google time to breathe
+            setTimeout(() => location.reload(), 1000);
+        }
+
+        window.onload = async () => {
+            try {
+                const res = await fetch(GOOGLE_SCRIPT_URL);
+                const posts = await res.json();
+                const feed = document.getElementById('homeFeed');
+                feed.innerHTML = ""; 
+
+                posts.forEach(p => {
+                    // Check if the data is a post (has content) or just a user (has bio)
+                    if(p.content) {
+                        feed.insertAdjacentHTML('beforeend', `
+                            <div class="bg-stone-900 p-5 rounded-2xl border border-stone-800 mb-4 animate-fade-in">
+                                <div class="flex items-center gap-3 mb-3">
+                                    <img src="https://api.dicebear.com/7.x/bottts/svg?seed=${p.username}" class="w-8 h-8 rounded-full border border-stone-700">
+                                    <span class="font-bold text-[#f3a661] text-sm">@${p.username}</span>
+                                </div>
+                                <p class="text-stone-200 text-sm leading-relaxed">${p.content}</p>
+                            </div>
+                        `);
+                    }
+                });
+            } catch (e) { console.error("Load error"); }
+        };
+    </script>
+</body>
+</html>

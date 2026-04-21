@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>The Hill | Join</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>body { background-color: #1a1512; color: #f9f4ef; }</style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="bg-stone-900 p-8 rounded-2xl border border-stone-800 w-full max-w-md shadow-2xl">
+        <h1 class="text-4xl font-bold text-[#f3a661] text-center mb-6 italic">THE HILL</h1>
+        
+        <div id="signupBox">
+            <form id="signupForm" class="space-y-4">
+                <div class="flex gap-2">
+                    <input id="fName" type="text" placeholder="First Name" class="w-1/2 p-3 rounded bg-stone-800 border border-stone-700 outline-none" required>
+                    <input id="lName" type="text" placeholder="Last Name" class="w-1/2 p-3 rounded bg-stone-800 border border-stone-700 outline-none" required>
+                </div>
+                <input id="uName" type="text" placeholder="Username" class="w-full p-3 rounded bg-stone-800 border border-stone-700 outline-none" required>
+                <input id="sID" type="text" placeholder="6-Digit Student ID" maxlength="6" class="w-full p-3 rounded bg-stone-800 border border-stone-700 outline-none" required>
+                <div class="flex gap-2">
+                    <select id="pro" class="w-1/2 p-3 rounded bg-stone-800 border border-stone-700 outline-none">
+                        <option value="He/Him">He/Him</option>
+                        <option value="She/Her">She/Her</option>
+                        <option value="They/Them">They/Them</option>
+                    </select>
+                    <input id="gYear" type="number" placeholder="Grad Year" class="w-1/2 p-3 rounded bg-stone-800 border border-stone-700 outline-none" required>
+                </div>
+                <button type="submit" class="w-full bg-[#f3a661] text-stone-900 font-bold py-4 rounded-xl">Join The Hill</button>
+            </form>
+            <p class="text-center mt-6 text-sm text-stone-500">Already a member? <button onclick="toggleAuth()" class="text-[#f3a661] font-bold underline">Login</button></p>
+        </div>
+
+        <div id="loginBox" class="hidden">
+            <form id="loginForm" class="space-y-4">
+                <input id="loginID" type="text" placeholder="6-Digit Student ID" maxlength="6" class="w-full p-4 rounded bg-stone-800 border border-stone-700 outline-none" required>
+                <button type="submit" class="w-full bg-[#f3a661] text-stone-900 font-bold py-4 rounded-xl">Login</button>
+            </form>
+            <p class="text-center mt-6 text-sm text-stone-500">Need account? <button onclick="toggleAuth()" class="text-[#f3a661] font-bold underline">Sign Up</button></p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        function toggleAuth() {
+            document.getElementById('signupBox').classList.toggle('hidden');
+            document.getElementById('loginBox').classList.toggle('hidden');
+        }
+
+        document.getElementById('signupForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const ok = await signUpStudent(fName.value, lName.value, uName.value, sID.value, pro.value, gYear.value);
+            if (ok) window.location.href = "home.html";
+        };
+
+        document.getElementById('loginForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const ok = await loginStudent(loginID.value);
+            if (ok) window.location.href = "home.html";
+            else alert("Student ID not found.");
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>The Hill | My Profile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #1a1512; color: #f9f4ef; }
+        .text-cream-orange { color: #f3a661; }
+        .bg-cream-orange { background-color: #f3a661; }
+        .border-stone { border-color: #2e2a27; }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <nav class="border-b border-stone p-4 sticky top-0 bg-[#1a1512] z-50">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold italic text-cream-orange">THE HILL</h1>
+            <div class="flex gap-6 items-center">
+                <a href="home.html" class="text-stone-400 hover:text-cream-orange">Home</a>
+                <a href="profile.html" class="text-cream-orange font-bold">Profile</a>
+                <button onclick="logout()" class="text-xs text-stone-500 hover:text-red-400 uppercase">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-3xl mx-auto mt-12 px-4">
+        <div class="bg-stone-900 rounded-3xl border border-stone p-8 shadow-2xl">
+            <div class="flex flex-col items-center text-center mb-10">
+                <div class="relative">
+                    <img id="profAvatar" src="" class="w-32 h-32 rounded-full border-4 border-cream-orange mb-4 shadow-lg">
+                    <div id="profBadge" class="absolute bottom-4 right-0"></div>
+                </div>
+                <h2 id="profName" class="text-3xl font-bold"></h2>
+                <p id="profHandle" class="text-stone-500 italic"></p>
+            </div>
+
+            <hr class="border-stone mb-10">
+
+            <form id="editProfileForm" class="space-y-6">
+                <div>
+                    <label class="block text-xs font-bold text-stone-500 uppercase mb-2 tracking-widest">About Me (Bio)</label>
+                    <textarea id="editBio" class="w-full bg-stone-800 border border-stone p-4 rounded-xl outline-none focus:border-cream-orange h-32 transition"></textarea>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs font-bold text-stone-500 uppercase mb-2 tracking-widest">Pronouns</label>
+                        <select id="editPro" class="w-full bg-stone-800 border border-stone p-4 rounded-xl outline-none focus:border-cream-orange transition">
+                            <option value="He/Him">He/Him</option>
+                            <option value="She/Her">She/Her</option>
+                            <option value="They/Them">They/Them</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-stone-500 uppercase mb-2 tracking-widest">Student ID (View Only)</label>
+                        <input id="editID" type="text" class="w-full bg-stone-900 border border-stone p-4 rounded-xl text-stone-600" disabled>
+                    </div>
+                </div>
+
+                <div class="pt-4">
+                    <button type="submit" class="w-full bg-cream-orange text-stone-900 font-bold py-4 rounded-2xl hover:brightness-110 active:scale-95 transition-all shadow-lg">
+                        Save Changes
+                    </button>
+                    <p id="saveStatus" class="text-center text-xs mt-4 text-green-500 hidden italic">Profile updated and synced to the Sheet! ✓</p>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+    <script>
+        // 1. Load current data
+        const user = JSON.parse(localStorage.getItem('currentUser'));
+        if (!user) window.location.href = "index.html";
+
+        // 2. Populate the page
+        document.getElementById('profAvatar').src = user.avatar;
+        document.getElementById('profName').innerText = user.name;
+        document.getElementById('profHandle').innerText = "@" + user.user;
+        document.getElementById('profBadge').innerHTML = getBadge(user.year);
+        
+        document.getElementById('editBio').value = user.bio || "Go Tigers! 🐯";
+        document.getElementById('editPro').value = user.pronouns;
+        document.getElementById('editID').value = user.id;
+
+        // 3. Update Profile Logic
+        document.getElementById('editProfileForm').onsubmit = async (e) => {
+            e.preventDefault();
+            
+            // Update local object
+            const updatedUser = {
+                ...user,
+                bio: document.getElementById('editBio').value,
+                pronouns: document.getElementById('editPro').value
+            };
+
+            // Save to LocalStorage
+            localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+
+            // Optional: Send update to Google Sheets
+            // Note: Since Apps Script doPost appends rows, this will create a new row 
+            // with the same ID but new info. You can manually delete the old row in your sheet.
+            await fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify(updatedUser)
+            });
+
+            // Show visual confirmation
+            const status = document.getElementById('saveStatus');
+            status.classList.remove('hidden');
+            setTimeout(() => {
+                window.location.href = "home.html"; // Send back to home to see changes
+            }, 1500);
+        };
+
+        function logout() {
+            localStorage.removeItem('currentUser');
+            window.location.href = "index.html";
+        }
+    </script>
+</body>
+</html>
