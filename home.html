@@ -1,69 +1,89 @@
-// 1. Get current user from local storage
-const user = JSON.parse(localStorage.getItem('currentUser'));
-if (!user) window.location.href = "index.html";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Hill | Home</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #1a1512; color: #f9f4ef; font-family: 'Inter', sans-serif; }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="min-h-screen">
+    <nav class="border-b border-stone-800 p-4 sticky top-0 bg-[#1a1512] z-50">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold italic text-[#f3a661]">THE HILL</h1>
+            <div class="flex gap-6 items-center">
+                <a href="home.html" class="text-[#f3a661] font-bold">Home</a>
+                <a href="profile.html" class="text-stone-400 hover:text-[#f3a661]">Profile</a>
+                <img id="navAvatar" src="" class="w-8 h-8 rounded-full border border-stone-700">
+            </div>
+        </div>
+    </nav>
 
-// 2. Setup the sidebar
-document.getElementById('navAvatar').src = user.avatar;
-document.getElementById('sideAvatar').src = user.avatar;
-document.getElementById('sideName').innerText = user.user;
-document.getElementById('sideBadge').innerHTML = getBadge(user.year);
+    <main class="max-w-5xl mx-auto mt-8 grid grid-cols-1 md:grid-cols-4 gap-8 px-4">
+        <aside class="hidden md:block col-span-1">
+            <div class="bg-stone-900 p-6 rounded-2xl border border-stone-800 sticky top-24">
+                <img id="sideAvatar" src="" class="w-20 h-20 rounded-full border-2 border-[#f3a661] mb-4 mx-auto">
+                <h2 id="sideName" class="font-bold text-center text-lg"></h2>
+                <div id="sideBadge" class="flex justify-center mt-2"></div>
+            </div>
+        </aside>
 
-// 3. The Function to Load the Feed
-window.onload = async () => {
-    try {
-        const res = await fetch(GOOGLE_SCRIPT_URL);
-        const data = await res.json(); 
-        const feed = document.getElementById('homeFeed');
-        feed.innerHTML = ""; // Clear the loading text
+        <section class="col-span-1 md:col-span-3 space-y-6">
+            <div class="bg-stone-900 p-5 rounded-2xl border border-stone-800 shadow-xl">
+                <textarea id="postInput" class="w-full bg-stone-800 p-4 rounded-xl text-sm outline-none border border-stone-700 focus:border-[#f3a661] h-28 transition-all resize-none" placeholder="What's the word?"></textarea>
+                <div class="flex justify-end mt-3">
+                    <button id="postBtn" onclick="handlePostSubmit()" class="bg-[#f3a661] text-stone-900 font-bold px-8 py-2.5 rounded-xl hover:brightness-110 active:scale-95 transition-all">Post</button>
+                </div>
+            </div>
 
-        // DEBUG: This checks if we are getting 'posts' or just a flat list
-        const postsToDisplay = data.posts ? data.posts : data;
+            <div id="homeFeed" class="space-y-4 pb-12">
+                <p class="text-stone-600 animate-pulse text-center py-10">Loading the latest posts...</p>
+            </div>
+        </section>
+    </main>
 
-        if (Array.isArray(postsToDisplay)) {
-            postsToDisplay.forEach(p => {
-                // Skip if it's a user-signup row (check for 'content' or 'bio')
-                // This prevents the "Bio acting like a post" bug
-                if (!p.content) return; 
+    <script src="app.js"></script>
+    <script>
+        // 1. Initial Setup
+        const user = JSON.parse(localStorage.getItem('currentUser'));
+        if (!user) window.location.href = "index.html";
 
-                feed.insertAdjacentHTML('beforeend', `
-                    <div class="bg-stone-900 p-5 rounded-2xl border border-stone-800 mb-4 animate-fade-in shadow-sm">
-                        <div class="flex items-center gap-3 mb-3">
-                            <a href="user.html?u=${encodeURIComponent(p.username || p.user)}" class="flex items-center gap-3 group">
-                                <img src="https://api.dicebear.com/7.x/bottts/svg?seed=${p.username || p.user}" 
-                                     class="w-8 h-8 rounded-full border border-stone-700 group-hover:border-[#f3a661] transition-all">
-                                <span class="font-bold text-[#f3a661] text-sm group-hover:underline">@${p.username || p.user}</span>
-                            </a>
-                        </div>
-                        <p class="text-stone-200 text-sm leading-relaxed whitespace-pre-wrap">${p.content}</p>
-                    </div>
-                `);
-            });
-        } else {
-            feed.innerHTML = "<p class='text-stone-600 text-center'>No posts found in the sheet.</p>";
-        }
-    } catch (e) { 
-        console.error("Home Load Error:", e);
-        document.getElementById('homeFeed').innerHTML = "<p class='text-red-400 text-center'>Connection Error. Make sure your Google Script is deployed to 'Anyone'.</p>";
-    }
-};
+        document.getElementById('navAvatar').src = user.avatar;
+        document.getElementById('sideAvatar').src = user.avatar;
+        document.getElementById('sideName').innerText = user.user;
+        document.getElementById('sideBadge').innerHTML = getBadge(user.year);
 
-// 4. The Function to Send a Post
-async function handlePostSubmit() {
-    const input = document.getElementById('postInput');
-    const btn = event.target;
-    const text = input.value;
-    
-    if(!text.trim()) return;
-    
-    btn.innerText = "Posting...";
-    btn.disabled = true;
+        // 2. Load Feed from Google Script
+        window.onload = async () => {
+            try {
+                const res = await fetch(GOOGLE_SCRIPT_URL);
+                const data = await res.json();
+                const feed = document.getElementById('homeFeed');
+                feed.innerHTML = ""; 
 
-    await publishPost(user.user, text);
-    
-    input.value = "";
-    btn.innerText = "Post";
-    btn.disabled = false;
-    
-    // Quick refresh to show the new post
-    setTimeout(() => location.reload(), 500);
-}
+                // Ensure we are looping through the POSTS folder
+                if (data.posts && data.posts.length > 0) {
+                    data.posts.forEach(p => {
+                        if(!p.content) return; // Skip user-info rows
+
+                        feed.insertAdjacentHTML('beforeend', `
+                            <div class="bg-stone-900 p-6 rounded-2xl border border-stone-800 animate-fade-in">
+                                <div class="flex items-center gap-3 mb-4">
+                                    <a href="user.html?u=${encodeURIComponent(p.username)}" class="flex items-center gap-3 group">
+                                        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=${p.username}" class="w-10 h-10 rounded-full border border-stone-700 group-hover:border-[#f3a661] transition-all">
+                                        <div>
+                                            <p class="font-bold text-[#f3a661] group-hover:underline">@${p.username}</p>
+                                            <p class="text-[10px] text-stone-500 uppercase tracking-tighter">Just now</p>
+                                        </div>
+                                    </a>
+                                </div>
+                                <p class="text-stone-200 text-sm leading-relaxed whitespace-pre-wrap">${p.content}</p>
+                            </div>
+                        `);
+                    });
+                } else {
+                    feed.innerHTML = "<p
