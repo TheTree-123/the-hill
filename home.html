@@ -1,23 +1,69 @@
+// 1. Get current user from local storage
+const user = JSON.parse(localStorage.getItem('currentUser'));
+if (!user) window.location.href = "index.html";
+
+// 2. Setup the sidebar
+document.getElementById('navAvatar').src = user.avatar;
+document.getElementById('sideAvatar').src = user.avatar;
+document.getElementById('sideName').innerText = user.user;
+document.getElementById('sideBadge').innerHTML = getBadge(user.year);
+
+// 3. The Function to Load the Feed
 window.onload = async () => {
     try {
         const res = await fetch(GOOGLE_SCRIPT_URL);
         const data = await res.json(); 
         const feed = document.getElementById('homeFeed');
-        feed.innerHTML = ""; 
+        feed.innerHTML = ""; // Clear the loading text
 
-        // We pull from data.posts now!
-        data.posts.forEach(p => {
-            feed.insertAdjacentHTML('beforeend', `
-                <div class="bg-stone-900 p-5 rounded-2xl border border-stone-800 mb-4 animate-fade-in">
-                    <div class="flex items-center gap-3 mb-3">
-                        <a href="user.html?u=${p.username}" class="flex items-center gap-3 group">
-                            <img src="https://api.dicebear.com/7.x/bottts/svg?seed=${p.username}" class="w-8 h-8 rounded-full border border-stone-700 group-hover:border-[#f3a661]">
-                            <span class="font-bold text-[#f3a661] text-sm group-hover:underline">@${p.username}</span>
-                        </a>
+        // DEBUG: This checks if we are getting 'posts' or just a flat list
+        const postsToDisplay = data.posts ? data.posts : data;
+
+        if (Array.isArray(postsToDisplay)) {
+            postsToDisplay.forEach(p => {
+                // Skip if it's a user-signup row (check for 'content' or 'bio')
+                // This prevents the "Bio acting like a post" bug
+                if (!p.content) return; 
+
+                feed.insertAdjacentHTML('beforeend', `
+                    <div class="bg-stone-900 p-5 rounded-2xl border border-stone-800 mb-4 animate-fade-in shadow-sm">
+                        <div class="flex items-center gap-3 mb-3">
+                            <a href="user.html?u=${encodeURIComponent(p.username || p.user)}" class="flex items-center gap-3 group">
+                                <img src="https://api.dicebear.com/7.x/bottts/svg?seed=${p.username || p.user}" 
+                                     class="w-8 h-8 rounded-full border border-stone-700 group-hover:border-[#f3a661] transition-all">
+                                <span class="font-bold text-[#f3a661] text-sm group-hover:underline">@${p.username || p.user}</span>
+                            </a>
+                        </div>
+                        <p class="text-stone-200 text-sm leading-relaxed whitespace-pre-wrap">${p.content}</p>
                     </div>
-                    <p class="text-stone-200 text-sm leading-relaxed">${p.content}</p>
-                </div>
-            `);
-        });
-    } catch (e) { console.error("Load error"); }
+                `);
+            });
+        } else {
+            feed.innerHTML = "<p class='text-stone-600 text-center'>No posts found in the sheet.</p>";
+        }
+    } catch (e) { 
+        console.error("Home Load Error:", e);
+        document.getElementById('homeFeed').innerHTML = "<p class='text-red-400 text-center'>Connection Error. Make sure your Google Script is deployed to 'Anyone'.</p>";
+    }
 };
+
+// 4. The Function to Send a Post
+async function handlePostSubmit() {
+    const input = document.getElementById('postInput');
+    const btn = event.target;
+    const text = input.value;
+    
+    if(!text.trim()) return;
+    
+    btn.innerText = "Posting...";
+    btn.disabled = true;
+
+    await publishPost(user.user, text);
+    
+    input.value = "";
+    btn.innerText = "Post";
+    btn.disabled = false;
+    
+    // Quick refresh to show the new post
+    setTimeout(() => location.reload(), 500);
+}
