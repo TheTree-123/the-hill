@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><title>The Hill | View Profile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>body { background-color: #1a1512; color: #f9f4ef; }</style>
+</head>
+<body class="min-h-screen">
+    <nav class="border-b border-stone-800 p-4 bg-[#1a1512]">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold italic text-[#f3a661]">THE HILL</h1>
+            <a href="home.html" class="text-stone-400 hover:text-[#f3a661]">← Back to Feed</a>
+        </div>
+    </nav>
+
+    <main class="max-w-2xl mx-auto mt-12 px-4 text-center">
+        <div class="bg-stone-900 p-10 rounded-3xl border border-stone-800 shadow-2xl">
+            <img id="viewAvatar" src="" class="w-32 h-32 rounded-full mx-auto border-4 border-[#f3a661] mb-6">
+            <h2 id="viewName" class="text-3xl font-bold mb-2"></h2>
+            <p id="viewHandle" class="text-[#f3a661] font-mono mb-4"></p>
+            <div id="viewBadge"></div>
+            
+            <div class="mt-8 p-6 bg-stone-800/50 rounded-2xl border border-stone-700 italic text-stone-300">
+                <span class="block text-xs font-bold text-stone-500 uppercase mb-2 tracking-widest text-left">About</span>
+                <p id="viewBio"></p>
+            </div>
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+    <script>
+        // Get the Username from the URL (e.g., user.html?u=Gabriel)
+        const params = new URLSearchParams(window.location.search);
+        const targetUser = params.get('u');
+
+        window.onload = async () => {
+            try {
+                const res = await fetch(GOOGLE_SCRIPT_URL);
+                const allData = await res.json();
+                
+                // Find this specific user in the 'users' data
+                const person = allData.find(u => u.user === targetUser);
+
+                if (person) {
+                    document.getElementById('viewAvatar').src = `https://api.dicebear.com/7.x/bottts/svg?seed=${person.user}`;
+                    document.getElementById('viewName').innerText = person.name;
+                    document.getElementById('viewHandle').innerText = "@" + person.user;
+                    document.getElementById('viewBio').innerText = person.bio || "No bio yet.";
+                    document.getElementById('viewBadge').innerHTML = getBadge(person.year);
+                }
+            } catch (e) { console.error("Error loading profile"); }
+        };
+    </script>
+</body>
+</html>
