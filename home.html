@@ -6,19 +6,20 @@
     <title>The Hill | Home</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #1a1512; color: #f9f4ef; font-family: 'Inter', sans-serif; }
+        body { background-color: #1a1512; color: #f9f4ef; }
         .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="min-h-screen">
+
     <nav class="border-b border-stone-800 p-4 sticky top-0 bg-[#1a1512] z-50">
         <div class="max-w-6xl mx-auto flex justify-between items-center">
             <h1 class="text-2xl font-bold italic text-[#f3a661]">THE HILL</h1>
             <div class="flex gap-6 items-center">
                 <a href="home.html" class="text-[#f3a661] font-bold">Home</a>
                 <a href="profile.html" class="text-stone-400 hover:text-[#f3a661]">Profile</a>
-                <img id="navAvatar" src="" class="w-8 h-8 rounded-full border border-stone-700">
+                <img id="navAvatar" src="" class="w-8 h-8 rounded-full border border-stone-700 bg-stone-800">
             </div>
         </div>
     </nav>
@@ -26,7 +27,7 @@
     <main class="max-w-5xl mx-auto mt-8 grid grid-cols-1 md:grid-cols-4 gap-8 px-4">
         <aside class="hidden md:block col-span-1">
             <div class="bg-stone-900 p-6 rounded-2xl border border-stone-800 sticky top-24">
-                <img id="sideAvatar" src="" class="w-20 h-20 rounded-full border-2 border-[#f3a661] mb-4 mx-auto">
+                <img id="sideAvatar" src="" class="w-20 h-20 rounded-full border-2 border-[#f3a661] mb-4 mx-auto bg-stone-800">
                 <h2 id="sideName" class="font-bold text-center text-lg"></h2>
                 <div id="sideBadge" class="flex justify-center mt-2"></div>
             </div>
@@ -57,7 +58,7 @@
         document.getElementById('sideName').innerText = user.user;
         document.getElementById('sideBadge').innerHTML = getBadge(user.year);
 
-        // 2. Load Feed from Google Script
+        // 2. Load Feed
         window.onload = async () => {
             try {
                 const res = await fetch(GOOGLE_SCRIPT_URL);
@@ -65,19 +66,17 @@
                 const feed = document.getElementById('homeFeed');
                 feed.innerHTML = ""; 
 
-                // Ensure we are looping through the POSTS folder
                 if (data.posts && data.posts.length > 0) {
                     data.posts.forEach(p => {
-                        if(!p.content) return; // Skip user-info rows
+                        if(!p.content) return; 
 
                         feed.insertAdjacentHTML('beforeend', `
                             <div class="bg-stone-900 p-6 rounded-2xl border border-stone-800 animate-fade-in">
                                 <div class="flex items-center gap-3 mb-4">
                                     <a href="user.html?u=${encodeURIComponent(p.username)}" class="flex items-center gap-3 group">
-                                        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=${p.username}" class="w-10 h-10 rounded-full border border-stone-700 group-hover:border-[#f3a661] transition-all">
+                                        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=${p.username}" class="w-10 h-10 rounded-full border border-stone-700 group-hover:border-[#f3a661] transition-all bg-stone-800">
                                         <div>
                                             <p class="font-bold text-[#f3a661] group-hover:underline">@${p.username}</p>
-                                            <p class="text-[10px] text-stone-500 uppercase tracking-tighter">Just now</p>
                                         </div>
                                     </a>
                                 </div>
@@ -86,4 +85,36 @@
                         `);
                     });
                 } else {
-                    feed.innerHTML = "<p
+                    feed.innerHTML = "<p class='text-stone-600 text-center py-10 italic'>No posts yet.</p>";
+                }
+            } catch (e) {
+                console.error("Feed error:", e);
+                document.getElementById('homeFeed').innerHTML = "<p class='text-red-400 text-center'>Error loading feed.</p>";
+            }
+        };
+
+        // 3. Post Submit
+        async function handlePostSubmit() {
+            const btn = document.getElementById('postBtn');
+            const input = document.getElementById('postInput');
+            const text = input.value.trim();
+
+            if (!text) return;
+
+            btn.disabled = true;
+            btn.innerText = "Posting...";
+
+            const success = await publishPost(user.user, text);
+            
+            if (success) {
+                input.value = "";
+                setTimeout(() => location.reload(), 800);
+            } else {
+                alert("Something went wrong!");
+                btn.disabled = false;
+                btn.innerText = "Post";
+            }
+        }
+    </script>
+</body>
+</html>
