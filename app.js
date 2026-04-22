@@ -14,8 +14,9 @@ async function signUpStudent(fName, lName, uName, sID, pro, gYear) {
 async function loginStudent(studentID) {
     try {
         const res = await fetch(GOOGLE_SCRIPT_URL);
-        const users = await res.json();
-        const found = users.find(u => u.id == studentID);
+        const data = await res.json();
+        // Since we have two tabs, we look for the user in the "users" part of the data
+        const found = data.users.find(u => u.id == studentID);
         if (found) {
             localStorage.setItem('currentUser', JSON.stringify({ ...found, avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${found.user}` }));
             return true;
